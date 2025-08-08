@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        ".sequelizerc": "javascript",
+        ".stylelintrc": "json",
+        "*.tsx": "typescriptreact",
+        ".env.*": "dotenv",
+        ".flaskenv": "dotenv",
+        ".prettierrc": "json",
+        "*.asta": "database",
+        "*.java": "java",
+        "ctime": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "enabled"
+}

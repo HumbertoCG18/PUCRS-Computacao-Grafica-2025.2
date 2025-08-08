@@ -16,28 +16,16 @@
 //           mingw32-make -f Makefile.mk 
 //
 
-#include <iostream>
-#include <cmath>
-#include <ctime>
-#include <fstream>
- 
+#include<iostream>
+#include<cmath>
+#include<ctime>
+#include<fstream>
 
 using namespace std;
 
-#ifdef WIN32
-#include <windows.h>
-#include <glut.h>
-#else
-#include <sys/time.h>
-#endif
-
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#endif
-
-#ifdef __linux__
+#include<windows.h>
 #include <GL/glut.h>
-#endif
+#include<ctime>
 
 #include "Ponto.h"
 #include "Poligono.h"
