@@ -1,33 +1,23 @@
 
-
-#include <cstdlib>
-
-#include "Linha.h"
-
-void Linha::geraLinha(int limite, int TamMax)
-{
-    float deltaX,deltaY;
-        
-    x1 = (rand() % limite*10)/10.0;
-    y1 = (rand() % limite*10)/10.0;
-    
-    deltaX = (rand() % limite)/(float)limite;
-    deltaY = (rand() % limite)/(float)limite;
-    
-    if(rand()%2)
-        x2 = x1 + deltaX * TamMax;
-    else x2 = x1 - deltaX * TamMax;
-    if(rand()%2)
-        y2 = y1 + deltaY * TamMax;
-    else y2 = y1 - deltaY * TamMax;
-
-}
+#ifdef WIN32
+#include <windows.h>
+#include "glut.h"
+#endif
 
 
-void Linha::desenhaLinha()
-{
-	glBegin(GL_LINES);
-		glVertex2f(x1,y1);
-		glVertex2f(x2,y2);
-	glEnd();
-}
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#endif
+
+//#include "Ponto.h"
+
+class Linha {
+	float minx,miny, maxx, maxy; // envelope
+
+public:
+	float x1,y1,x2,y2;
+
+    void geraLinha(int limite, int TamMax);
+	void desenhaLinha();
+
+};

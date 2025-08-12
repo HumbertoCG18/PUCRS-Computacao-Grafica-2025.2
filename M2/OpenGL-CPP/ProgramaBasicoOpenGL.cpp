@@ -195,9 +195,6 @@ void display( void )
     glColor3f(1,1,1); // R, G, B  [0..1]
     DesenhaEixos();
     
-    defineCor(IndianRed);
-    Poly.desenhaPoligono();
-    
     if (FoiClicado)
     {
         PontoClicado.imprime("- Ponto no universo: ", "\n");
@@ -295,10 +292,10 @@ void arrow_keys ( int a_keys, int x, int y )
 			glutFullScreen ( ); // Vai para Full Screen
 			break;
         case GLUT_KEY_RIGHT:       // Se pressionar UP
-            angulo--; // Vai para Full Screen
+            angulo--;
             break;
         case GLUT_KEY_LEFT:       // Se pressionar UP
-            angulo++; // Vai para Full Screen
+            angulo++;
             break;
 	    case GLUT_KEY_DOWN:     // Se pressionar UP
 								// Reposiciona a janela

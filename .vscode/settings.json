@@ -1,0 +1,14 @@
+{
+    "C_Cpp.dimInactiveRegions": false,
+    "files.associations": {
+        ".sequelizerc": "javascript",
+        ".stylelintrc": "json",
+        "*.tsx": "typescriptreact",
+        ".env.*": "dotenv",
+        ".flaskenv": "dotenv",
+        ".prettierrc": "json",
+        "*.asta": "database",
+        "*.java": "java",
+        "iostream": "cpp"
+    }
+}

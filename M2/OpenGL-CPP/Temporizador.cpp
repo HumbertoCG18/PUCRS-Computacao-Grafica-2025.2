@@ -1,40 +1,34 @@
 //
-//  ControlaTempo.cpp
+//  ControlaTempo.hpp
 //  Imagens
 //
 //  Created by Márcio Sarroglia Pinho on 23/03/20.
 //  Copyright © 2020 rmd. All rights reserved.
 //
 
-#include "Temporizador.h"
+#ifndef ControlaTempo_hpp
+#define ControlaTempo_hpp
 
-// Inicializa o temporizador
-Temporizador::Temporizador()
-{
-#ifdef _WIN32
-    start_time = GetTickCount();
+#include <iostream>
+using namespace std;
+
+#ifdef WIN32
+#include <windows.h>
 #else
-    // Figure out time elapsed since last call to idle function
-    gettimeofday(&start_time, NULL);
-    
+#include <sys/time.h>
 #endif
 
-}
-// Retorna o tempo decorrido desde a última chamada desta mesma função
-double Temporizador::getDeltaT()
-{
-    double dt;
 
-#ifdef _WIN32
-    DWORD end_time;
-    end_time = GetTickCount();
-    dt = (float) (end_time - start_time) / 1000.0;
+class Temporizador
+{
+#ifdef WIN32
+    DWORD start_time;
 #else
-    // Figure out time elapsed since last call to idle function
-    struct timeval end_time;
-    gettimeofday(&end_time, NULL);
-    dt = (float)(end_time.tv_sec  - start_time.tv_sec) + 1.0e-6*(end_time.tv_usec - start_time.tv_usec);
+    struct timeval start_time;
 #endif
-    start_time = end_time;
-    return dt;
-}
+public:
+    Temporizador(); // Inicializa o temporizador
+    double getDeltaT(); // Retorna o tempo decorrido desde a última chamada desta mesma função
+};
+
+#endif /* ControlaTempo_hpp */

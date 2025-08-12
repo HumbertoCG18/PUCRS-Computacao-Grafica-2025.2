@@ -24,15 +24,14 @@
 using namespace std;
 
 #include<windows.h>
-#include <GL/glut.h>
+#include<glut.h>
 #include<ctime>
+#include"Ponto.h"
+#include"Poligono.h"
 
-#include "Ponto.h"
-#include "Poligono.h"
+#include"Temporizador.h"
 
-#include "Temporizador.h"
-
-#include "ListaDeCoresRGB.h"
+#include"ListaDeCoresRGB.h"
 
 // Limites logicos da area de desenho
 Ponto Min, Max;

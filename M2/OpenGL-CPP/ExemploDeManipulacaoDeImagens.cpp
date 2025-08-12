@@ -1,387 +1,427 @@
 // **********************************************************************
-// PUCRS/FACIN
-// Programa de testes para manipulaÃ§Ã£o de Imagens
+// PUCRS/Escola PolitŽcnica
+// COMPUTA‚ÌO GRçFICA
+//
+// Programa basico para criar aplicacoes 2D em OpenGL
 //
 // Marcio Sarroglia Pinho
-//
 // pinho@pucrs.br
 // **********************************************************************
-//
-//  Para rodar no XCODE, veja o arquivo "InstrucoesXCODE.rtf"
-//  Para rodar em um terminal Windows, digite
-//           mingw32-make -f Makefile.mk 
-//
 
+// Para uso no Xcode:
+// Abra o menu Product -> Scheme -> Edit Scheme -> Use custom working directory
+// Selecione a pasta onde voce descompactou o ZIP que continha este arquivo.
+//
 
 #include <iostream>
 #include <cmath>
+#include <ctime>
+#include <fstream>
 
 using namespace std;
+
+#ifdef WIN32
+#include <windows.h>
+#include <glut.h>
+#else
+#include <sys/time.h>
+#endif
 
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #endif
 
-#include "ImageClass.h"
-ImageClass Image, NewImage;
+#ifdef __linux__
+#include <glut.h>
+#endif
+
+#include "Ponto.h"
+#include "Poligono.h"
 
 #include "Temporizador.h"
 Temporizador T;
+double AccumDeltaT=0;
 
+Poligono Mapa;
+Poligono ConvexHull;
+Poligono ConjuntoDePonto;
+// Limites logicos da area de desenho
+Ponto Min, Max, PontoClicado;
 
-const int LIMIAR = 100;
-#define LARGURA_JAN 1000
-#define ALTURA_JAN 500
-// **********************************************************************
-//  void ConvertBlackAndWhite()
-// **********************************************************************
-void ConvertBlackAndWhite()
-{
-    unsigned char r,g,b;
-    int x,y;
-    int i;
-    
-    cout << "Iniciou Black & White....";
+bool desenha = false;
+bool FoiClicado = false;
 
-    for(x=0; x<Image.SizeX(); x++)
+class Faixa{
+    vector<int> ArestasNaFaixa;
+public:
+    void CadastraAresta(int a)
     {
-        for(y=0; y<Image.SizeY(); y++)
-        {
-            i = Image.GetPointIntensity(x,y); // VERIFICA O TOM DE CINZA DA IMAGEM
-           // Image.ReadPixel(x,y,r,g,b);
-
-            if (i < LIMIAR)
-            {
-                NewImage.DrawPixel(x, y,0,0,0);  // exibe um ponto PRETO na imagem
-            }
-            else NewImage.DrawPixel(x, y, 255,255,255); // exibe um ponto VERMELHO na imagem
-        }
+        ArestasNaFaixa.push_back(a);
     }
-    cout << "Concluiu Black & White.\n";
-}
-// **********************************************************************
-// void DetectImageBorders()
-// **********************************************************************
-void ConvertBlackAndWhite(int Imin, int Imax)
-{
-    unsigned char r,g,b;
-    int x,y;
-    int i;
-    cout << "Iniciou Black & White....";
-    for(x=0; x<Image.SizeX(); x++)
+    int getNroDeArestas()
     {
-        for(y=0; y<Image.SizeY(); y++)
-        {
-            i = Image.GetPointIntensity(x,y); // VERIFICA O TOM DE CINZA DA IMAGEM
-            Image.ReadPixel(x,y,r,g,b);
-
-            if (i >= Imin && i<= Imax)
-            {
-                NewImage.DrawPixel(x, y,0,0,0);  // exibe um ponto PRETO na imagem
-            }
-            else NewImage.DrawPixel(x, y, 255,255,255); // exibe um ponto VERMELHO na imagem
-
-        }
+        return ArestasNaFaixa.size();
     }
-    cout << "Concluiu Black & White." << endl;
-}
-
-// **********************************************************************
-// void DetectImageBorders()
-// **********************************************************************
-void DetectImageBorders()
-{
-    cout << "Iniciou DetectImageBorders....";
-#define SENSIBILIDADE 10
-    // varredura vertical
-
-    int x,y;
-    int i1,i2;
-/*
-    for(x=0; x<Image.SizeX(); x++)
+    int getAresta(int i)
     {
-        for(y=0; y<Image.SizeY()-1; y++)
-        {
-            i1 = Image.GetPointIntensity(x,y); // Le o TOM DE CINZA DA IMAGEM
-            i2 = Image.GetPointIntensity(x,y+1); // Le o TOM DE CINZA DA IMAGEM
-            if (fabs(i1-i2) > SENSIBILIDADE)
-                NewImage.DrawPixel(x, y,255,255,255);  // exibe um ponto BRANCO na imagem da direita
-            else NewImage.DrawPixel(x, y,0,0,0);  // exibe um ponto BRANCO na imagem da direita
-
-        }
+        return ArestasNaFaixa[i];
     }
-*/
-    // varredura horizontal
-    for(y=0; y<Image.SizeY(); y++)
-    {
-        for(x=0; x<Image.SizeX()-1; x++)
-        {
-            i1 = Image.GetPointIntensity(x,y); // Le o TOM DE CINZA DA IMAGEM
-            i2 = Image.GetPointIntensity(x+1,y); // Le o TOM DE CINZA DA IMAGEM
-            if (fabs(i1-i2) > SENSIBILIDADE)
-                NewImage.DrawPixel(x, y,255,255,255);  // exibe um ponto BRANCO na imagem da direita
-            else NewImage.DrawPixel(x, y,0,0,0);  // exibe um ponto BRANCO na imagem da direita
+};
+class ConjuntoDeFaixas{
+    vector<Faixa> TodasAsFaixas;
 
-        }
+public:
+    ConjuntoDeFaixas()
+    {
+
     }
-
-    cout << "Iniciou DetectImageBorders...." << endl;
-}
-
-// **********************************************************************
-// void ConvertToGrayscale()
-// **********************************************************************
-void ConvertToGrayscale()
-{
-    cout << "Iniciou ConvertToGrayscale..." << endl;
-    int x,y;
-    int i;
-    for(x=0; x<Image.SizeX(); x++)
+    void CadastraArestaNaFaixa(int f, int a)
     {
-        for(y=0; y<Image.SizeY(); y++)
-        {
-            i = Image.GetPointIntensity(x,y); // Le o TOM DE CINZA DA IMAGEM
-            NewImage.DrawPixel(x, y,i,i,i);  // exibe um ponto CINZA na imagem da direita
-        }
+        TodasAsFaixas[f].CadastraAresta(a);
     }
-    cout << "Concluiu ConvertToGrayscale." << endl;
-}
-
-// **********************************************************************
-// void InvertImage()
-// **********************************************************************
-void InvertImage()
-{
-    cout << "Iniciou InvertImage..." << endl;
-    unsigned char r,g,b;
-    int x,y;
-    for(x=0; x<Image.SizeX(); x++)
+    void CriaFaixas(int qtdDeFaixas) // pode ser substitu’da por uma construtora
     {
-        for(y=0; y<Image.SizeY(); y++)
-        {
-            Image.ReadPixel(x,Image.SizeY()-y,r,g,b);
-            NewImage.DrawPixel(x, y,r,g,b);  // exibe um ponto CINZA na imagem da direita
-        }
+        for (int i=0; i<qtdDeFaixas; i++)
+            TodasAsFaixas.push_back(Faixa());
     }
-
-    cout << "Concluiu InvertImage." << endl;
-}
-
-// **********************************************************************
-// void OrdenaVetor(int window[])
-// **********************************************************************
-void OrdenaVetor(int window[])
-{
-    int temp, i , j;
-    for(i = 0; i < 9; i++)
+    Faixa getFaixa(int f)
     {
-        temp = window[i];
-        for(j = i-1; j >= 0 && temp < window[j]; j--)
+        return TodasAsFaixas[f];
+    }
+};
+
+ConjuntoDeFaixas EspacoDividido;
+float angulo=0.0;
+
+
+void ImprimeFaixas()
+{
+    for (int i=0;i<10;i++)
+    {
+        cout << "Faixa: " << i << ": ";
+        Faixa f;
+        f = EspacoDividido.getFaixa(i);
+        for (int a=0; a<f.getNroDeArestas();a++)
         {
-            window[j+1] = window[j];
+            cout << f.getAresta(a) << " ";
         }
-        window[j+1] = temp;
+        cout << endl;
+
     }
 }
-// **********************************************************************
-// void MontaVetor(int Px, int Py, int Vetor[9])
-// **********************************************************************
-void MontaVetor(int Px, int Py, int Vetor[9])
-{
-
-}
-// **********************************************************************
-// void Mediana()
-// **********************************************************************
-void Mediana()
-{
-
-}
 
 // **********************************************************************
-//  void init(void)
+//
 // **********************************************************************
 void init()
 {
-    int r;
-    // Carrega a uma imagem
-    r = Image.Load("Imagens//Falcao.jpg"); // Carrega uma imagem
+    // Define a cor do fundo da tela (AZUL)
+    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
 
-    if (!r) exit(1); // Erro na carga da imagem
-    else cout << ("Imagem carregada!\n");
+    Mapa.LePoligono("PoligonoDeTeste.txt");
+    //Mapa.LePoligono("EstadoRS.txt");
+    Mapa.obtemLimites(Min,Max);
 
-    // Ajusta o tamanho da imagem da direita, para que ela
-    // passe a ter o mesmo tamnho da imagem recem carregada
-    // Caso precise alterar o tamanho da nova imagem, mude os parÃ¢metros
-    // da na chamada abaixo
-    NewImage.SetSize(Image.SizeX(), Image.SizeY(), Image.Channels());
-    cout << "Nova Imagem Criada" << endl;
+    Min.x--;Min.y--;
+    Max.x++;Max.y++;
+    //cout << "Vertices no Vetor: " << Mapa.getNVertices() << endl;
+    //GeraConvexHull();
+    EspacoDividido.CriaFaixas(10);
+    EspacoDividido.CadastraArestaNaFaixa(0,11);
+    EspacoDividido.CadastraArestaNaFaixa(3,11);
+    ImprimeFaixas();
+    exit(0);
+}
 
+double nFrames=0;
+double TempoTotal=0;
+// **********************************************************************
+//
+// **********************************************************************
+void animate()
+{
+    double dt;
+    dt = T.getDeltaT();
+    AccumDeltaT += dt;
+    TempoTotal += dt;
+    nFrames++;
+
+    if (AccumDeltaT > 1.0/30) // fixa a atualiza‹o da tela em 30
+    {
+        AccumDeltaT = 0;
+        //angulo+=0.05;
+        glutPostRedisplay();
+    }
+    if (TempoTotal > 5.0)
+    {
+        cout << "Tempo Acumulado: "  << TempoTotal << " segundos. " ;
+        cout << "Nros de Frames sem desenho: " << nFrames << endl;
+        cout << "FPS(sem desenho): " << nFrames/TempoTotal << endl;
+        TempoTotal = 0;
+        nFrames = 0;
+    }
 }
 // **********************************************************************
 //  void reshape( int w, int h )
 //  trata o redimensionamento da janela OpenGL
+//
 // **********************************************************************
 void reshape( int w, int h )
 {
     // Reset the coordinate system before modifying
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    // Set the viewport to be the entire window
+    // Define a area a ser ocupada pela area OpenGL dentro da Janela
     glViewport(0, 0, w, h);
-    gluOrtho2D(0,w,0,h);
+    // Define os limites logicos da area OpenGL dentro da Janela
+    glOrtho(Min.x,Max.x,
+            Min.y,Max.y,
+            0,1);
 
-    // Set the clipping volume
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
 }
-double AccumDeltaT=0;
+// **********************************************************************
+//
+// **********************************************************************
+void DesenhaEixos()
+{
+    Ponto Meio;
+    Meio.x = (Max.x+Min.x)/2;
+    Meio.y = (Max.y+Min.y)/2;
+    Meio.z = (Max.z+Min.z)/2;
+
+    glBegin(GL_LINES);
+    //  eixo horizontal
+        glVertex2f(Min.x,Meio.y);
+        glVertex2f(Max.x,Meio.y);
+    //  eixo vertical
+        glVertex2f(Meio.x,Min.y);
+        glVertex2f(Meio.x,Max.y);
+    glEnd();
+}
+void DesenhaLinha(Ponto P1, Ponto P2)
+{
+    glBegin(GL_LINES);
+        glVertex3f(P1.x,P1.y,P1.z);
+        glVertex3f(P2.x,P2.y,P2.z);
+    glEnd();
+}
 // **********************************************************************
 //  void display( void )
+//
 // **********************************************************************
 void display( void )
 {
-    double dt = T.getDeltaT();
-    AccumDeltaT += dt;
-    if (AccumDeltaT > 3) // imprime o frame rate a cada 3 segundos
+
+	// Limpa a tela coma cor de fundo
+	glClear(GL_COLOR_BUFFER_BIT);
+
+    // Define os limites lógicos da área OpenGL dentro da Janela
+	glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+	// Coloque aqui as chamadas das rotinas que desenham os objetos
+	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+	glLineWidth(1);
+	glColor3f(1,1,1); // R, G, B  [0..1]
+    DesenhaEixos();
+
+    glRotatef(angulo, 0,0,1);
+    glLineWidth(2);
+    glColor3f(1,1,0); // R, G, B  [0..1]
+    Mapa.desenhaPoligono();
+
+    if (FoiClicado == true)
     {
-        AccumDeltaT =0;
-        cout << "FPS: " << 1.0/dt << endl;
+        Ponto Esq;
+        Ponto Dir (-1,0);
+        Esq = PontoClicado + Dir * 100;
+        glColor3f(0,1,0); // R, G, B  [0..1]
+        DesenhaLinha(PontoClicado, Esq);
+        //F = CalculaFaixa(PontoClicado);
+
+        glColor3f(1,0,0); // R, G, B  [0..1]
+        Ponto P1, P2;
+        for (int i=0; i < Mapa.getNVertices();i++)
+        {
+            Mapa.getAresta(i, P1, P2);
+            //if(PassaPelaFaixa(i,F))
+            if (HaInterseccao(PontoClicado,Esq, P1, P2))
+                Mapa.desenhaAresta(i);
+        }
+
     }
 
-    glClearColor(0.0f, 0.0f, 1.0f, 1.0f); // Fundo de tela preto
-    glClear(GL_COLOR_BUFFER_BIT);
 
-    glMatrixMode(GL_MODELVIEW);
+    //Mapa.desenhaVertices();
 
-// Ajusta o ZOOM da imagem para que apareca na metade da janela
-    float zoomH = (glutGet(GLUT_WINDOW_WIDTH)/2.0)/(double)Image.SizeX();
-    float zoomV = (glutGet(GLUT_WINDOW_HEIGHT))/(double)Image.SizeY();
-    Image.SetZoomH(zoomH);
-    Image.SetZoomV(zoomV);
+    if (desenha)
+        ConvexHull.desenhaPoligono();
 
-// posiciona a imagem no canto inferior esquerdo da janela
-    Image.SetPos(0, 0);
+    glPointSize(5);
+    glColor3f(0,1,0); // R, G, B  [0..1]
+    //Mapa.desenhaVertices();
 
-// posiciona a imagem nova na metada da direita da janela
-    NewImage.SetPos(glutGet(GLUT_WINDOW_WIDTH)/2, 0);
+	glutSwapBuffers();
+}
+// **********************************************************************
+// ContaTempo(double tempo)
+//      conta um certo nœmero de segundos e informa quanto frames
+// se passaram neste per’odo.
+// **********************************************************************
+void ContaTempo(double tempo)
+{
+    Temporizador T;
 
-// Ajusta o ZOOM da imagem para que apareca na metade da janela
-    NewImage.SetZoomH(zoomH);
-    NewImage.SetZoomV(zoomV);
-
-// Coloca as imagens na tela
-    Image.Display();
-    NewImage.Display();
-
-// Mostra a tela OpenGL
-    glutSwapBuffers();
+    unsigned long cont = 0;
+    cout << "Inicio contagem de " << tempo << "segundos ..." << flush;
+    while(true)
+    {
+        tempo -= T.getDeltaT();
+        cont++;
+        if (tempo <= 0.0)
+        {
+            cout << "fim! - Passaram-se " << cont << " frames." << endl;
+            break;
+        }
+    }
 
 }
 // **********************************************************************
 //  void keyboard ( unsigned char key, int x, int y )
+//
 // **********************************************************************
+
 void keyboard ( unsigned char key, int x, int y )
 {
-    cout << "Passou pela Keyboard."<< endl;
-    switch ( key )
-    {
-    case 27: // Termina o programa qdo
-        NewImage.Delete();
-        Image.Delete();
-        exit ( 0 );   // a tecla ESC for pressionada
-        break;
-    case '2':
-//        ConvertBlackAndWhite(220, 255);
-        ConvertBlackAndWhite();
-        glutPostRedisplay();    // obrigatÃ³rio para redesenhar a tela
-        break;
-    case 'g':
-        ConvertToGrayscale();
-        glutPostRedisplay();    // obrigatÃ³rio para redesenhar a tela
-        break;
 
-    case 'b':
-        DetectImageBorders();
-        glutPostRedisplay();    // obrigatÃ³rio para redesenhar a tela
+	switch ( key )
+	{
+		case 27:        // Termina o programa qdo
+			exit ( 0 );   // a tecla ESC for pressionada
+			break;
+        case 't':
+            ContaTempo(3);
+            break;
+        case ' ':
+            desenha = !desenha;
         break;
-    case 'i':
-        InvertImage();
-        glutPostRedisplay();    // obrigatÃ³rio para redesenhar a tela
-        break;
-    case 'm':
-        Mediana();
-        glutPostRedisplay();    // obrigatÃ³rio para redesenhar a tela
-        break;
-    case 'c':
-        NewImage.CopyTo(&Image);
-        glutPostRedisplay();    // obrigatÃ³rio para redesenhar a tela
-        break;
-    default:
-        break;
-    }
+		default:
+			break;
+	}
 }
-
 // **********************************************************************
 //  void arrow_keys ( int a_keys, int x, int y )
 // **********************************************************************
 void arrow_keys ( int a_keys, int x, int y )
 {
-    switch ( a_keys )
-    {
-    case GLUT_KEY_UP:       // When Up Arrow Is Pressed...
-        break;
-    case GLUT_KEY_DOWN:     // When Down Arrow Is Pressed...
-
-        break;
-    default:
-        break;
-    }
+	switch ( a_keys )
+	{
+		case GLUT_KEY_UP:       // Se pressionar UP
+			glutFullScreen ( ); // Vai para Full Screen
+			break;
+	    case GLUT_KEY_DOWN:     // Se pressionar UP
+								// Reposiciona a janela
+            glutPositionWindow (50,50);
+			glutReshapeWindow ( 700, 500 );
+			break;
+		default:
+			break;
+	}
 }
-
 // **********************************************************************
+// Esta fun‹o captura o clique do botao direito do mouse sobre a ‡rea de
+// desenho e converte a coordenada para o sistema de referncia definido
+// na glOrtho (ver fun‹o reshape)
+// Este c—digo Ž baseado em http://hamala.se/forums/viewtopic.php?t=20
 // **********************************************************************
-void Mouse(int button, int state, int x, int y)
+void Mouse(int button,int state,int x,int y)
 {
-    if (state == GLUT_DOWN)
-    {
-        cout << "(" << x << "," << y << "): " ;
-        cout << Image.GetPointIntensity(x,y) << endl;
-        Image.DrawPixel(x,y,255,0,0);
-        glutPostRedisplay();
-    }
+    GLint viewport[4];
+    GLdouble modelview[16],projection[16];
+    GLfloat wx=x,wy,wz;
+    GLdouble ox=0.0,oy=0.0,oz=0.0;
 
+    if(state!=GLUT_DOWN)
+      return;
+    if(button!=GLUT_RIGHT_BUTTON)
+     return;
+    cout << "Botao da direita! ";
 
+    glGetIntegerv(GL_VIEWPORT,viewport);
+    y=viewport[3]-y;
+    wy=y;
+    glGetDoublev(GL_MODELVIEW_MATRIX,modelview);
+    glGetDoublev(GL_PROJECTION_MATRIX,projection);
+    glReadPixels(x,y,1,1,GL_DEPTH_COMPONENT,GL_FLOAT,&wz);
+    gluUnProject(wx,wy,wz,modelview,projection,viewport,&ox,&oy,&oz);
+    PontoClicado = Ponto(ox,oy,oz);
+    PontoClicado.imprime("- Ponto no universo: ", "\n");
+    FoiClicado = true;
 }
+
 
 // **********************************************************************
 //  void main ( int argc, char** argv )
+//
 // **********************************************************************
-
-int main ( int argc, char** argv )
+int  main ( int argc, char** argv )
 {
+    cout << "Programa OpenGL" << endl;
+
     glutInit            ( &argc, argv );
-
     glutInitDisplayMode (GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGB );
-    glutInitWindowPosition (10,10);
+    glutInitWindowPosition (0,0);
 
-    // Define o tamanho da janela grÃ¡fica do programa
-    glutInitWindowSize  ( LARGURA_JAN, ALTURA_JAN);
-    glutCreateWindow    ( "Image Loader" );
+    // Define o tamanho inicial da janela grafica do programa
+    glutInitWindowSize  ( 650, 500);
 
+    // Cria a janela na tela, definindo o nome da
+    // que aparecera na barra de titulo da janela.
+    glutCreateWindow    ( "Poligonos em OpenGL" );
+
+    // executa algumas inicializações
     init ();
 
+    // Define que o tratador de evento para
+    // o redesenho da tela. A funcao "display"
+    // será chamada automaticamente quando
+    // for necessário redesenhar a janela
     glutDisplayFunc ( display );
+
+    // Define que o tratador de evento para
+    // o invalida‹o da tela. A funcao "display"
+    // será chamada automaticamente sempre que a
+    // m‡quina estiver ociosa (idle)
+    glutIdleFunc(animate);
+
+    // Define que o tratador de evento para
+    // o redimensionamento da janela. A funcao "reshape"
+    // será chamada automaticamente quando
+    // o usuário alterar o tamanho da janela
     glutReshapeFunc ( reshape );
+
+    // Define que o tratador de evento para
+    // as teclas. A funcao "keyboard"
+    // será chamada automaticamente sempre
+    // o usuário pressionar uma tecla comum
     glutKeyboardFunc ( keyboard );
+
+    // Define que o tratador de evento para
+    // as teclas especiais(F1, F2,... ALT-A,
+    // ALT-B, Teclas de Seta, ...).
+    // A funcao "arrow_keys" será chamada
+    // automaticamente sempre o usuário
+    // pressionar uma tecla especial
     glutSpecialFunc ( arrow_keys );
+
     glutMouseFunc(Mouse);
 
-    glutIdleFunc ( display );
-
+    // inicia o tratamento dos eventos
     glutMainLoop ( );
+
     return 0;
 }
-
-
