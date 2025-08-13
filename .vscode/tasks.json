@@ -3,7 +3,7 @@
         {
             "type": "cppbuild",
             "label": "C/C++: g++.exe arquivo de build ativo",
-            "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\g++.exe",
+            "command": "C:\\MinGW\\bin\\g++.exe",
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
@@ -16,26 +16,6 @@
             },
             "problemMatcher": [
                 "$gcc"
-            ],
-            "group": "build",
-            "detail": "Tarefa gerada pelo Depurador."
-        },
-        {
-            "type": "cppbuild",
-            "label": "C/C++: cl.exe arquivo de build ativo",
-            "command": "cl.exe",
-            "args": [
-                "/Zi",
-                "/EHsc",
-                "/nologo",
-                "/Fe${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "${file}"
-            ],
-            "options": {
-                "cwd": "${fileDirname}"
-            },
-            "problemMatcher": [
-                "$msCompile"
             ],
             "group": {
                 "kind": "build",
