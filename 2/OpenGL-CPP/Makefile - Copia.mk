@@ -2,7 +2,7 @@
 
 PROG = BasicoOpenGL.exe
 #FONTES = Linha.cpp Ponto.cpp Temporizador.cpp InterseccaoEntreTodasAsLinhas.cpp 
-FONTES = Ponto.cpp Poligono.cpp Temporizador.cpp ListaDeCoresRGB.cpp Instancia.cpp ModeloMatricial.cpp TransformacoesGeometricas.cpp
+FONTES = Ponto.cpp Poligono.cpp Temporizador.cpp ListaDeCoresRGB.cpp ProgramaBasicoOpenGL1.cpp
 OBJETOS = $(FONTES:.cpp=.cpp)
 CFLAGS = -g -Iinclude\GL # -Wall -g  # Todas as warnings, infos de debug
 #LDFLAGS = -Llib\GL -lfreeglut -lopengl32 -lglu32 -lm
