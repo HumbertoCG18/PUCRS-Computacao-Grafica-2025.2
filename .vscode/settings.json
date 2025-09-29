@@ -9,6 +9,7 @@
         ".prettierrc": "json",
         "*.asta": "database",
         "*.java": "java",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "fstream": "cpp"
     }
 }

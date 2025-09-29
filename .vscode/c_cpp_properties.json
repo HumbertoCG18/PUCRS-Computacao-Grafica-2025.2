@@ -9,12 +9,11 @@
             ],
             "windowsSdkVersion": "10.0.26100.0",
             "compilerPath": "C:/MinGW/bin/g++.exe",
-            "cStandard": "c17",
-            "cppStandard": "c++17",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
             "intelliSenseMode": "windows-gcc-x86",
             "includePath": [
-                "${workspaceFolder}/**",
-                "${workspaceFolder}/M2/OpenGL-CPP"
+                "${workspaceFolder}/**"
             ]
         }
     ],
